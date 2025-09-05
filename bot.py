@@ -6,11 +6,10 @@ from telegram.ext import (
     ConversationHandler, ContextTypes, filters
 )
 
-# ✅ Replace with your bot token
+# ✅ Your bot token
 TOKEN = "7606371201:AAGLVxcMKO945xVRcSHKISXAQDi1K8_d1mQ"
-WEBHOOK_URL = "https://doc-bot-1.onrender.com/webhook"  # Your Render URL
+WEBHOOK_URL = "https://doc-bot-1.onrender.com/webhook"  # Replace with your Render URL
 
-# Flask app
 flask_app = Flask(__name__)
 application = None
 
@@ -22,6 +21,7 @@ ANSWER_FILE = "answers.txt"
 
 
 def save_answer(user_id, data):
+    """Save user answers into a file"""
     with open(ANSWER_FILE, "a", encoding="utf-8") as f:
         f.write(f"{user_id}: {data}\n")
 
@@ -59,7 +59,6 @@ async def get_whatsapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return Q1
 
 
-# Q1 handler
 async def handle_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -74,6 +73,7 @@ async def handle_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ConversationHandler.END
 
+    # Q2
     keyboard = [
         [InlineKeyboardButton("✅ YES", callback_data="YES"),
          InlineKeyboardButton("❌ NO", callback_data="NO")]
@@ -85,13 +85,13 @@ async def handle_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return Q2
 
 
-# Q2 handler
 async def handle_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
     save_answer(user_id, f"Q2: {query.data}")
 
+    # Q3
     keyboard = [
         [InlineKeyboardButton("✅ YES", callback_data="YES"),
          InlineKeyboardButton("❌ NO", callback_data="NO")]
@@ -103,24 +103,24 @@ async def handle_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return Q3
 
 
-# Q3 handler
 async def handle_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
     save_answer(user_id, f"Q3: {query.data}")
 
+    # Q4
     await query.edit_message_text(
         "4️⃣ What are you personally hoping to gain or grow in through this teaching series?"
     )
     return Q4
 
 
-# Q4 handler
 async def handle_q4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     save_answer(user_id, f"Q4: {update.message.text}")
 
+    # Q5
     keyboard = [
         [InlineKeyboardButton("✅ YES", callback_data="YES"),
          InlineKeyboardButton("❌ NO", callback_data="NO")]
@@ -133,7 +133,6 @@ async def handle_q4(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return Q5
 
 
-# Q5 handler
 async def handle_q5(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -144,7 +143,7 @@ async def handle_q5(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("👉 Join Doctrine of Christ Group", url="https://t.me/+gmr8SdD-dbc4MGY8")]
     ]
     await query.edit_message_text(
-        "✅ Thank you for answering the questions!\n\n"
+        "✅ Thank you for answering all the questions!\n\n"
         "Please click below to join the Doctrine of Christ Telegram group:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -179,7 +178,7 @@ def main():
 
     application.add_handler(conv_handler)
 
-    # Set webhook
+    # Run webhook on Render
     application.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
