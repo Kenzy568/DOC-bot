@@ -16,21 +16,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Bot token & webhook
-TOKEN = os.getenv(7606371201:AAGLVxcMKO945xVRcSHKISXAQDi1K8_d1mQ)  # replace or set in Render
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://doc-bot-b3kw.onrender.com/webhook")
+# Bot token (replace YOUR_BOT_TOKEN with your actual bot token)
+TOKEN = "7606371201:AAGLVxcMKO945xVRcSHKISXAQDi1K8_d1mQ"
+
+# Webhook URL (replace <your-app> with your Render app name)
+WEBHOOK_URL = "https://doc-bot-1.onrender.com/webhook"
 
 # Flask app
 app = Flask(__name__)
 application = None  # telegram application
 
-# Store answers in memory (quick lookup)
+# Store answers in memory
 user_answers = {}
 
-# Group link
-GROUP_LINK = "https://t.me/+gmr8SdD-dbc4MGY8"
+# File to save answers
+ANSWERS_FILE = "answers.txt"
 
-ANSWERS_FILE = "answers.txt"  # file to store answers
+# Telegram group link
+GROUP_LINK = "https://t.me/+gmr8SdD-dbc4MGY8"
 
 
 # Save answer to file
@@ -41,11 +44,14 @@ def save_answer(user_id, username, answer):
 
 # /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    question = "1️⃣ The teaching is going to span through 8 weeks. Are you willing to commit? (Yes/No)"
-    await update.message.reply_text(question)
+    await update.message.reply_text(
+        "WELCOME TO DOCTRINE OF CHRIST\n\n"
+        "1️⃣ The teaching is going to span through 8 weeks.\n"
+        "Are you willing to commit to this teaching series with an open and teachable heart? (Yes/No)"
+    )
 
 
-# Handle user replies
+# Handle user messages
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip().lower()
     user_id = update.message.from_user.id
@@ -78,10 +84,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Webhook route
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    if request.method == "POST":
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        application.update_queue.put_nowait(update)
-        return "OK", 200
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put_nowait(update)
+    return "OK", 200
 
 
 def main():
@@ -95,7 +100,7 @@ def main():
     # Handle text replies
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Run webhook instead of polling
+    # Run webhook
     application.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
@@ -106,5 +111,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
