@@ -1,7 +1,8 @@
-python-telegram-bot[webhook]==20.3
+python-telegram-bot[webhooks]
 Flask==2.3.2
 gspread==5.8.0
 google-auth==2.22.0
+
 
 
 
