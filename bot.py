@@ -17,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Bot token & webhook
-TOKEN = os.getenv("TOKEN", "YOUR_BOT_TOKEN_HERE")  # replace or set in Render
+TOKEN = os.getenv("7606371201:AAGLVxcMKO945xVRcSHKISXAQDi1K8_d1mQ")  # replace or set in Render
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://doc-bot-b3kw.onrender.com/webhook")
 
 # Flask app
@@ -106,3 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
