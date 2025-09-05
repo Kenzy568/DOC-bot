@@ -1,158 +1,158 @@
 import os
-import logging
 from flask import Flask, request
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    filters,
-    ConversationHandler,
-    ContextTypes,
+    Application, CommandHandler, MessageHandler, CallbackQueryHandler,
+    ConversationHandler, ContextTypes, filters
 )
 
-# Logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# Bot token
+# ✅ Replace with your bot token
 TOKEN = "7606371201:AAGLVxcMKO945xVRcSHKISXAQDi1K8_d1mQ"
-WEBHOOK_URL = "https://doc-bot-1.onrender.com/webhook"
+WEBHOOK_URL = "https://doc-bot-1.onrender.com/webhook"  # Your Render URL
 
 # Flask app
-app = Flask(__name__)
+flask_app = Flask(__name__)
 application = None
 
-# File to save answers
-ANSWERS_FILE = "answers.txt"
-
-# Conversation states
+# States
 NAME, WHATSAPP, Q1, Q2, Q3, Q4, Q5 = range(7)
 
-# Telegram group link
-GROUP_LINK = "https://t.me/+gmr8SdD-dbc4MGY8"
+# File to save answers
+ANSWER_FILE = "answers.txt"
 
 
-# Save answer to file
-def save_answer(user_id, username, answer):
-    with open(ANSWERS_FILE, "a", encoding="utf-8") as f:
-        f.write(f"UserID: {user_id}, Username: {username}, Answer: {answer}\n")
+def save_answer(user_id, data):
+    with open(ANSWER_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{user_id}: {data}\n")
 
 
-# /start command
+# Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "WELCOME TO DOCTRINE OF CHRIST\n\nPlease provide your full name:"
+        "WELCOME TO DOCTRINE OF CHRIST 🙏\n\nPlease provide your FULL NAME:"
     )
     return NAME
 
 
-# Get full name
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["name"] = update.message.text.strip()
-    await update.message.reply_text("Please provide your WhatsApp number:")
+    user_id = update.message.from_user.id
+    context.user_data["name"] = update.message.text
+    save_answer(user_id, f"Full Name: {update.message.text}")
+    await update.message.reply_text("Please provide your WHATSAPP NUMBER:")
     return WHATSAPP
 
 
-# Get WhatsApp number
 async def get_whatsapp(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["whatsapp"] = update.message.text.strip()
+    user_id = update.message.from_user.id
+    context.user_data["whatsapp"] = update.message.text
+    save_answer(user_id, f"WhatsApp: {update.message.text}")
+
+    keyboard = [
+        [InlineKeyboardButton("✅ YES", callback_data="YES"),
+         InlineKeyboardButton("❌ NO", callback_data="NO")]
+    ]
     await update.message.reply_text(
-        "1️⃣ The teaching is going to span through 8 weeks.\n"
+        "1️⃣ The teaching is going to span through a minimum of 8 weeks.\n"
         "Are you willing to commit to this teaching series with an open and teachable heart?",
-        reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True),
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
     return Q1
 
 
-# Question 1 handler
+# Q1 handler
 async def handle_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip().lower()
-    user_id = update.message.from_user.id
-    username = update.message.from_user.username or "NoUsername"
-    name = context.user_data.get("name", "")
-    whatsapp = context.user_data.get("whatsapp", "")
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    save_answer(user_id, f"Q1: {query.data}")
 
-    if text in ["yes", "y"]:
-        context.user_data["q1"] = "Yes"
-        save_answer(user_id, username, f"Name: {name}, WhatsApp: {whatsapp}, Q1: Yes")
-        await update.message.reply_text(
-            "2️⃣ Do you have a plan or time set aside each week to go through the sessions thoughtfully?",
-            reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True),
-        )
-        return Q2
-    elif text in ["no", "n"]:
-        context.user_data["q1"] = "No"
-        save_answer(user_id, username, f"Name: {name}, WhatsApp: {whatsapp}, Q1: No")
-        await update.message.reply_text(
-            "🙏 Thank you for your interest. The first question is really needed for the teaching journey. God bless you! 🙏",
-            reply_markup=ReplyKeyboardRemove(),
+    if query.data == "NO":
+        await query.edit_message_text(
+            "🙏 Thank you for your interest.\n"
+            "The first question is very important for the teaching journey.\n"
+            "Since you’re not ready to commit, we cannot proceed.\n\nGod bless you! 🙏"
         )
         return ConversationHandler.END
-    else:
-        await update.message.reply_text("Please reply with 'Yes' or 'No'.")
-        return Q1
+
+    keyboard = [
+        [InlineKeyboardButton("✅ YES", callback_data="YES"),
+         InlineKeyboardButton("❌ NO", callback_data="NO")]
+    ]
+    await query.edit_message_text(
+        "2️⃣ Do you have a plan or time set aside each week to go through the sessions thoughtfully?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    return Q2
 
 
-# Question 2 handler
+# Q2 handler
 async def handle_q2(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    context.user_data["q2"] = text
-    save_answer(update.message.from_user.id, update.message.from_user.username or "NoUsername", f"Q2: {text}")
-    await update.message.reply_text(
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    save_answer(user_id, f"Q2: {query.data}")
+
+    keyboard = [
+        [InlineKeyboardButton("✅ YES", callback_data="YES"),
+         InlineKeyboardButton("❌ NO", callback_data="NO")]
+    ]
+    await query.edit_message_text(
         "3️⃣ Are you open to being checked in on occasionally for follow-up and encouragement?",
-        reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True),
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
     return Q3
 
 
-# Question 3 handler
+# Q3 handler
 async def handle_q3(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    context.user_data["q3"] = text
-    save_answer(update.message.from_user.id, update.message.from_user.username or "NoUsername", f"Q3: {text}")
-    await update.message.reply_text(
-        "4️⃣ What are you personally hoping to gain or grow in through this teaching series?",
-        reply_markup=ReplyKeyboardRemove(),
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    save_answer(user_id, f"Q3: {query.data}")
+
+    await query.edit_message_text(
+        "4️⃣ What are you personally hoping to gain or grow in through this teaching series?"
     )
     return Q4
 
 
-# Question 4 handler
+# Q4 handler
 async def handle_q4(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    context.user_data["q4"] = text
-    save_answer(update.message.from_user.id, update.message.from_user.username or "NoUsername", f"Q4: {text}")
+    user_id = update.message.from_user.id
+    save_answer(user_id, f"Q4: {update.message.text}")
+
+    keyboard = [
+        [InlineKeyboardButton("✅ YES", callback_data="YES"),
+         InlineKeyboardButton("❌ NO", callback_data="NO")]
+    ]
     await update.message.reply_text(
-        "5️⃣ Attendance will be taken during meetings. "
-        "If you are not consistent, you might be removed from the platform. Is that okay with you?",
-        reply_markup=ReplyKeyboardMarkup([["Yes", "No"]], one_time_keyboard=True),
+        "5️⃣ Attendance will be taken during the meeting, and if you are not consistent, "
+        "you might be removed from the platform. Is that okay by you?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
     return Q5
 
 
-# Question 5 handler
+# Q5 handler
 async def handle_q5(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    context.user_data["q5"] = text
-    save_answer(update.message.from_user.id, update.message.from_user.username or "NoUsername", f"Q5: {text}")
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    save_answer(user_id, f"Q5: {query.data}")
 
-    await update.message.reply_text(
-        f"✅ Thank you for completing the registration! Please join our group here: {GROUP_LINK}",
-        reply_markup=ReplyKeyboardRemove(),
+    keyboard = [
+        [InlineKeyboardButton("👉 Join Doctrine of Christ Group", url="https://t.me/+gmr8SdD-dbc4MGY8")]
+    ]
+    await query.edit_message_text(
+        "✅ Thank you for answering the questions!\n\n"
+        "Please click below to join the Doctrine of Christ Telegram group:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
     return ConversationHandler.END
 
 
-# /help command
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Send /start to begin your journey.")
-
-
-# Webhook route
-@app.route("/webhook", methods=["POST"])
+# Flask webhook route
+@flask_app.route("/webhook", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
     application.update_queue.put_nowait(update)
@@ -168,25 +168,25 @@ def main():
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
             WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_whatsapp)],
-            Q1: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q1)],
-            Q2: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q2)],
-            Q3: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q3)],
+            Q1: [CallbackQueryHandler(handle_q1)],
+            Q2: [CallbackQueryHandler(handle_q2)],
+            Q3: [CallbackQueryHandler(handle_q3)],
             Q4: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q4)],
-            Q5: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_q5)],
+            Q5: [CallbackQueryHandler(handle_q5)],
         },
-        fallbacks=[CommandHandler("start", start)],
+        fallbacks=[],
     )
 
     application.add_handler(conv_handler)
-    application.add_handler(CommandHandler("help", help_command))
 
-    # Run webhook
+    # Set webhook
     application.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
         url_path="webhook",
-        webhook_url=WEBHOOK_URL,
+        webhook_url=WEBHOOK_URL
     )
+    print("🤖 Doctrine of Christ bot is live!")
 
 
 if __name__ == "__main__":
